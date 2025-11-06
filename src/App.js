@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { fetchMovies, fetchTMDBGenres } from './api';
+import { fetchMovies, fetchTMDBGenres, fetchTMDBTrailer, fetchYouTubeTrailer } from './api';
 import SearchBar from './components/SearchBar';
 import Filters from './components/Filters';
 import MovieList from './components/MovieList';
+import VideoPlayer from './components/VideoPlayer';
 
 export default function App() {
   const [query, setQuery] = useState('');
@@ -13,6 +14,8 @@ export default function App() {
   const [genres, setGenres] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [currentVideoId, setCurrentVideoId] = useState(null);
+  const [loadingTrailer, setLoadingTrailer] = useState(false);
 
   
   useEffect(() => {
@@ -62,18 +65,58 @@ export default function App() {
   
   const currentYear = new Date().getFullYear();
 
+  // Handle watching trailer
+  const handleWatchTrailer = async (movie) => {
+    setLoadingTrailer(true);
+    console.log('Fetching trailer for movie:', movie); // Debug log
+    
+    try {
+      // Try TMDB video endpoint first (doesn't require YouTube API key)
+      let trailerData = null;
+      
+      // Check if movie has a valid numeric ID (from TMDB)
+      if (movie.id && typeof movie.id === 'number') {
+        console.log('Trying TMDB trailer for movie ID:', movie.id);
+        trailerData = await fetchTMDBTrailer(movie.id);
+        console.log('TMDB trailer result:', trailerData);
+      }
+      
+      // If TMDB doesn't have trailer, try YouTube search as fallback
+      if (!trailerData) {
+        console.log('TMDB trailer not found, trying YouTube search...');
+        trailerData = await fetchYouTubeTrailer(movie.title, movie.year);
+        console.log('YouTube search result:', trailerData);
+      }
+      
+      if (trailerData && trailerData.videoId) {
+        setCurrentVideoId(trailerData.videoId);
+      } else {
+        alert(`Sorry, no trailer found for "${movie.title}". Try searching for a different movie.`);
+      }
+    } catch (err) {
+      console.error('Error fetching trailer:', err);
+      alert('Failed to load trailer. Please try again.');
+    } finally {
+      setLoadingTrailer(false);
+    }
+  };
+
+  const handleCloseVideo = () => {
+    setCurrentVideoId(null);
+  };
+
 
   return (
     <div className="app">
       <header>
         <h1>Movie App </h1>
-        <p>you can serch tollywood or bollywood or hollywood movies find out here</p>
+        <p>you can find out tollywood or bollywood or hollywood movies and trailers here and enjoy</p>
         
       </header>
 
       <main>
         <div className="controls">
-          <SearchBar onSearch={(q) => setQuery(q)} />
+          <SearchBar onSearch={(q) => setQuery(q)} isLoading={loading} />
           <Filters
             genres={genres}
             selectedGenre={genre}
@@ -84,9 +127,17 @@ export default function App() {
         </div>
 
         <section className="results">
-          <MovieList movies={movies} loading={loading} error={error} />
+          <MovieList movies={movies} loading={loading} error={error} onWatchTrailer={handleWatchTrailer} />
         </section>
       </main>
+
+      {currentVideoId && (
+        <VideoPlayer videoId={currentVideoId} onClose={handleCloseVideo} />
+      )}
+
+      {loadingTrailer && (
+        <div className="trailer-loading">Loading trailer...</div>
+      )}
 
       <footer>
         <p>

@@ -2,6 +2,69 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## Features
+
+- 🎬 Search and browse movies from TMDB (The Movie Database)
+- 🎭 Filter by genre and minimum rating
+- ▶️ **Watch movie trailers directly from YouTube**
+- 📱 Responsive design
+
+## Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone <your-repo-url>
+   cd movie-app
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Get API Keys**
+   
+   You need the following API keys:
+   
+   - **TMDB API Key** (Required)
+     - Sign up at [https://www.themoviedb.org](https://www.themoviedb.org)
+     - Go to Settings → API → Request an API Key
+     - **This key is used for both movies AND trailers**
+   
+   - **YouTube Data API Key** (Optional - only for fallback trailer search)
+     - Go to [Google Cloud Console](https://console.cloud.google.com/)
+     - Create a new project or select existing
+     - Enable "YouTube Data API v3"
+     - Create credentials → API Key
+     - Copy your API key
+
+4. **Configure Environment Variables**
+   
+   Create a `.env` file in the root directory:
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Then edit `.env` and add your TMDB API key (YouTube key is optional):
+   ```
+   REACT_APP_TMDB_API_KEY=your_tmdb_api_key_here
+   REACT_APP_YOUTUBE_API_KEY=your_youtube_api_key_here (optional)
+   ```
+
+5. **Start the development server**
+   ```bash
+   npm start
+   ```
+   
+   Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+
+## How to Use
+
+1. **Search Movies**: Use the search bar to find specific movies
+2. **Filter**: Select a genre and minimum rating to refine results
+3. **Watch Trailers**: Click the "▶ Watch Trailer" button on any movie card to view the trailer in a modal
+4. **Close Trailer**: Click the close button (×) or press ESC to close the video
+
 ## Available Scripts
 
 In the project directory, you can run:

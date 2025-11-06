@@ -5,9 +5,10 @@ const USE_MOCK = false;
 
 const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY;
 const OMDB_API_KEY = process.env.REACT_APP_OMDB_API_KEY;
-
+const YOUTUBE_API_KEY = process.env.REACT_APP_YOUTUBE_API_KEY;
 
 const TMDB_BASE = 'https://api.themoviedb.org/3';
+const YOUTUBE_BASE = 'https://www.googleapis.com/youtube/v3';
 
 
 export async function fetchMoviesFromTMDB({ query = '', genre = '', minRating = 0, page = 1 }) {
@@ -40,6 +41,104 @@ export async function fetchTMDBGenres() {
   if (!TMDB_API_KEY) return [];
   const res = await axios.get(`${TMDB_BASE}/genre/movie/list`, { params: { api_key: TMDB_API_KEY } });
   return res.data.genres || [];
+}
+
+/**
+ * Fetch trailer from TMDB's video endpoint (primary method)
+ * @param {number} movieId - TMDB movie ID
+ * @returns {Object|null} YouTube video data or null if not found
+ */
+export async function fetchTMDBTrailer(movieId) {
+  if (!TMDB_API_KEY) {
+    console.warn('TMDB API key missing.');
+    return null;
+  }
+
+  try {
+    const res = await axios.get(`${TMDB_BASE}/movie/${movieId}/videos`, {
+      params: { api_key: TMDB_API_KEY }
+    });
+
+    if (res.data.results && res.data.results.length > 0) {
+      // Find first YouTube trailer or teaser
+      const trailer = res.data.results.find(
+        video => video.site === 'YouTube' && 
+        (video.type === 'Trailer' || video.type === 'Teaser')
+      ) || res.data.results.find(video => video.site === 'YouTube');
+
+      if (trailer) {
+        return {
+          videoId: trailer.key,
+          title: trailer.name,
+          type: trailer.type
+        };
+      }
+    }
+    return null;
+  } catch (err) {
+    console.error('Error fetching TMDB trailer:', err);
+    return null;
+  }
+}
+
+/**
+ * Fetch YouTube trailer using YouTube Data API (fallback method)
+ * @param {string} movieTitle - The title of the movie
+ * @param {string} year - Release year (optional, for better search results)
+ * @returns {Object|null} YouTube video data or null if not found
+ */
+export async function fetchYouTubeTrailer(movieTitle, year = '') {
+  if (!YOUTUBE_API_KEY) {
+    console.warn('YouTube API key missing. Set REACT_APP_YOUTUBE_API_KEY in .env');
+    return null;
+  }
+
+  try {
+    // Try multiple search queries for better results
+    const searchQueries = [
+      `${movieTitle} ${year} official trailer`,
+      `${movieTitle} ${year} trailer`,
+      `${movieTitle} trailer`,
+      `${movieTitle} ${year} teaser`
+    ];
+
+    for (const searchQuery of searchQueries) {
+      console.log('Searching YouTube for:', searchQuery.trim());
+      
+      const res = await axios.get(`${YOUTUBE_BASE}/search`, {
+        params: {
+          part: 'snippet',
+          maxResults: 3, // Get top 3 results to find best match
+          q: searchQuery.trim(),
+          type: 'video',
+          key: YOUTUBE_API_KEY
+        }
+      });
+
+      if (res.data.items && res.data.items.length > 0) {
+        // Prefer videos with "trailer" or "official" in the title
+        const video = res.data.items.find(item => {
+          const title = item.snippet.title.toLowerCase();
+          return title.includes('trailer') || title.includes('official') || title.includes('teaser');
+        }) || res.data.items[0];
+
+        return {
+          videoId: video.id.videoId,
+          title: video.snippet.title,
+          thumbnail: video.snippet.thumbnails.high?.url,
+          channelTitle: video.snippet.channelTitle
+        };
+      }
+    }
+    
+    return null;
+  } catch (err) {
+    console.error('Error fetching YouTube trailer:', err);
+    if (err.response) {
+      console.error('YouTube API Error:', err.response.data);
+    }
+    return null;
+  }
 }
 
 

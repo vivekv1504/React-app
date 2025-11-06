@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function MovieCard({ movie }) {
+export default function MovieCard({ movie, onWatchTrailer }) {
   return (
     <div className="movie-card">
       <div className="poster">
@@ -18,6 +18,14 @@ export default function MovieCard({ movie }) {
           {movie.year ? <span> • {movie.year}</span> : null}
         </div>
         <p className="overview">{movie.overview || 'No description available.'}</p>
+        
+        <button 
+          className="watch-trailer-btn"
+          onClick={() => onWatchTrailer(movie)}
+          aria-label={`Watch trailer for ${movie.title}`}
+        >
+          ▶ Watch Trailer
+        </button>
       </div>
     </div>
   );

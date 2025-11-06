@@ -1,7 +1,7 @@
 import React from 'react';
 import MovieCard from './MovieCard';
 
-export default function MovieList({ movies = [], loading, error }) {
+export default function MovieList({ movies = [], loading, error, onWatchTrailer }) {
   if (loading) {
     return <div className="status">Loading movies…</div>;
   }
@@ -14,7 +14,7 @@ export default function MovieList({ movies = [], loading, error }) {
   return (
     <div className="movie-list">
       {movies.map((m) => (
-        <MovieCard movie={m} key={m.id} />
+        <MovieCard movie={m} key={m.id} onWatchTrailer={onWatchTrailer} />
       ))}
     </div>
   );
